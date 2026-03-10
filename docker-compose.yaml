@@ -1,0 +1,47 @@
+services:
+  app:
+    container_name: clone_twitter_app_container
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stop_signal: SIGTERM
+    volumes:
+      - ./static:/home/static
+    ports:
+      - "8000:8000"
+    env_file:
+      - src/.env
+    depends_on:
+      - pg
+    networks:
+      - twitter_network
+
+  nginx:
+    container_name: clone_twitter_nginx_container
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/usr/share/nginx/html
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - pg
+      - app
+    networks:
+      - twitter_network
+  pg:
+    container_name: clone_twitter_pg_container
+    image: postgres
+    environment:
+      POSTGRES_DB: ${db_name}
+      POSTGRES_USER: ${db_user}
+      POSTGRES_PASSWORD: ${db_pass}
+    ports:
+      - "5432:5432"
+    networks:
+      - twitter_network
+
+networks:
+  twitter_network:
+    driver: bridge
